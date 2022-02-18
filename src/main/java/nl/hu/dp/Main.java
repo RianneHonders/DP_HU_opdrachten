@@ -1,5 +1,7 @@
 package nl.hu.dp;
+import nl.hu.dp.domains.Reiziger;
 
+import javax.sound.midi.Soundbank;
 import java.sql.*;
 
 import static java.lang.String.format;
@@ -50,13 +52,19 @@ public class Main {
         ResultSet set = statement.executeQuery();
 
         while (set != null && set.next()) {
+            String id = set.getString("reiziger_id");
+            String voorl = set.getString("voorletters");
+            String tussenv = set.getString("tussenvoegsel");
+            String achternm = set.getString("achternaam");
+            String gebdt = set.getString("geboortedatum");
 
-            System.out.println("#"+ set.getString("reiziger_id") + " " + set.getString("voorletters") + ". " + set.getString("tussenvoegsel") + " " + set.getString("achternaam") + " (" + set.getString("geboortedatum") + ")");
+            if (set.getString("tussenvoegsel") != null) {
+                System.out.println(String.format("#%s %s. %s %s (%s)", id, voorl, tussenv, achternm, gebdt));
+            } else {
+                System.out.println(String.format("#%s %s. %s (%s)", id, voorl, achternm, gebdt));
             }
 
-        closeConnection();
+            closeConnection();
+        }
     }
-
-
-
 }
