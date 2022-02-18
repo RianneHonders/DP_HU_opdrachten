@@ -38,14 +38,14 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
     public boolean update(Reiziger inReiziger) throws SQLException {
         try{
             PreparedStatement statement = this.connection.prepareStatement(
-                    "UPDATE reiziger SET  reiziger_id = ?, voorletters = ?, tussenvoegsel=? , achternaam = ?, geboortedatum = ? WHERE reiziger_id = ?;"
+                    "UPDATE reiziger SET voorletters = ?, tussenvoegsel=? , achternaam = ?, geboortedatum = ? WHERE reiziger_id = ?;"
             );
-            statement.setInt(1, inReiziger.getId());
-            statement.setString(2, inReiziger.getVoorletters());
-            statement.setString(3, inReiziger.getTussenvoegsel());
-            statement.setString(4, inReiziger.getAchternaam());
-            statement.setDate(5, inReiziger.getGeboortedatum());
-            statement.setInt(6, inReiziger.getId());
+            statement.setString(1, inReiziger.getVoorletters());
+            statement.setString(2, inReiziger.getTussenvoegsel());
+            statement.setString(3, inReiziger.getAchternaam());
+            statement.setDate(4, inReiziger.getGeboortedatum());
+            statement.setInt(5, inReiziger.getId());
+
             statement.executeUpdate();
             statement.close();
 
@@ -64,6 +64,7 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
                     "DELETE FROM reiziger WHERE reiziger_id = ?;"
             );
             statement.setInt(1, inReiziger.getId());
+
             statement.executeUpdate();
             statement.close();
             return true;
