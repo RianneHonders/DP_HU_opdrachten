@@ -92,7 +92,7 @@ public class Main {
 
         // Test update
         System.out.println("\n[Testing update]: check achternaam van persoon met Id: 77");
-        sietske.setAchternaam("Zus");
+        sietske.setAchternaam("Zwart");
         rdao.update(sietske);
         reizigers = rdao.findAll();
         for(Reiziger r : reizigers){
