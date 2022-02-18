@@ -9,6 +9,16 @@ public class Reiziger {
     private String achternaam = "";
     private Date geboortedatum = new Date(0);
 
+    public Reiziger(){
+    }
+    public Reiziger(int id, String voorlt, String tussenv, String achternm, Date gebdt){
+        this.id = id;
+        this.voorletters = voorlt;
+        this.tussenvoegsel = tussenv;
+        this.achternaam = achternm;
+        this.geboortedatum = gebdt;
+    }
+
     public int getId() {
         return id;
     }
