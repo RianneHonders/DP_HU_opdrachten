@@ -24,7 +24,7 @@ public class Main {
 //        testReizigerDAO(rdao);
         testAdresDAO(adoa, rdao);
 //        testConnection();
-        System.out.println("\n----\nendTestReizigerDAO\n----\n");
+        System.out.println("\n----\nendTest\n----\n");
     }
 
     private static void testAdresDAO(AdresDAOPostgres adao, ReizigersDAOPostgres rdao) throws SQLException {
@@ -64,7 +64,7 @@ public class Main {
         System.out.println();
 
         // Test update
-        System.out.println("\n[Testing update]: check achternaam van persoon met Id: 77");
+        System.out.println("\n[Testing update]: past achternaam van persoon met Id: 77 aan & huisnummer ");
         r1.setAchternaam("Zwart");
         rdao.update(r1);
         a1.setHuisnummer("40");
@@ -76,14 +76,14 @@ public class Main {
         System.out.print("\n[Test] aantal reizigers: " + reizigers.size() + " reizigers, na ReizigerDAO.update() \n");
 
         //Test delete
-        System.out.println("\n[Testing delete]: check achternaam van persoon met Id: 77");
+        System.out.println("\n[Testing delete]: check achternaam & adres van persoon met Id: 77");
         adao.delete(a1);
         rdao.delete(r1);
         reizigers = rdao.findAll();
         for(Reiziger r : reizigers){
             System.out.println(r.toString());
         }
-        System.out.print("\n[Test] aantal reizigers: " + reizigers.size() + " reizigers, na ReizigerDAO.delete() \n");
+        System.out.print("\n[Test] aantal reizigers: " + reizigers.size() + " reizigers, na AdresDAO.delete() & ReizigerDAO.delete() \n");
     }
 
 
