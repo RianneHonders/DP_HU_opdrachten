@@ -10,4 +10,6 @@ public interface ReizigersDAO {
     boolean delete(Reiziger inReiziger) throws SQLException;
 
     List<Reiziger> findAll() throws SQLException;
+    Reiziger findById(int id) throws SQLException;
+    Reiziger findByGbdatum(String datum) throws SQLException;
 }
