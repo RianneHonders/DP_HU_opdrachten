@@ -1,6 +1,8 @@
 package nl.hu.dp.domains;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class Reiziger {
     private int id = 0;
@@ -9,15 +11,14 @@ public class Reiziger {
     private String achternaam = "";
     private Date geboortedatum = new Date(0);
     private Adres adres;
+    private ArrayList<OVChipkaart> oVChipkaarten;
 
-    public Reiziger(){
+    public List<OVChipkaart> getOVChipkaarten(){
+        return this.oVChipkaarten;
     }
-    public Reiziger(int id, String voorlt, String tussenv, String achternm, Date gebdt){
-        this.id = id;
-        this.voorletters = voorlt;
-        this.tussenvoegsel = tussenv;
-        this.achternaam = achternm;
-        this.geboortedatum = gebdt;
+
+    public void setoVChipkaarten(List<OVChipkaart> oVChipkaarten){
+        this.oVChipkaarten = (ArrayList<OVChipkaart>) oVChipkaarten;
     }
 
     public Adres getAdres() {
@@ -27,6 +28,16 @@ public class Reiziger {
     public void setAdres(Adres adres) {
         this.adres = adres;
     }
+
+    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum){
+        this.id = id;
+        this.voorletters =  voorletters;
+        this.tussenvoegsel = tussenvoegsel;
+        this.achternaam = achternaam;
+        this.geboortedatum = geboortedatum;
+    }
+
+    public Reiziger(){}
 
     public int getId() {
         return id;
@@ -78,16 +89,19 @@ public class Reiziger {
     public String toString() {
         String s = "";
         if(tussenvoegsel != null) {
-            s = String.format("{#%s %s %s %s, geb. %s, ", id, voorletters, tussenvoegsel, achternaam, geboortedatum);
+            s = String.format("\n#%s %s %s %s, geb. %s, ", id, voorletters, tussenvoegsel, achternaam, geboortedatum);
         }        if(tussenvoegsel == null) {
-            s = String.format("{#%s %s %s, geb. %s, ", id, voorletters, achternaam, geboortedatum);
+            s = String.format("\n#%s %s %s, geb. %s, ", id, voorletters, achternaam, geboortedatum);
         }
-        if(adres != null){
-        s += adres.toString() + '}';
-        } if(adres == null){
-        s += '}';
+        if(adres != null) {
+            s += adres.toString();
         }
-        return s;
+        if(oVChipkaarten != null){
+            for (OVChipkaart ovChipkaart: oVChipkaarten){
+                s+= "\n\t" + ovChipkaart.toString() ;
+            }
+        }
+        return s ;
     }
 
 }

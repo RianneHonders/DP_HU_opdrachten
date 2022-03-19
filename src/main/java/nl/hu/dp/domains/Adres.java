@@ -73,7 +73,7 @@ public class Adres {
     @Override
     public String toString() {
         String s = "";
-        return s = String.format("Adres {#%s %s-%s}", adres_id, postcode, huisnummer);
+        return s = String.format("Adres: %s %s %s", straat, huisnummer, postcode);
            }
 
 }

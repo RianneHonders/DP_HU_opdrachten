@@ -1,12 +1,12 @@
 package nl.hu.dp;
-import nl.hu.dp.DAO.AdresDAOPostgres;
-import nl.hu.dp.DAO.ReizigersDAO;
-import nl.hu.dp.DAO.ReizigersDAOPostgres;
+import nl.hu.dp.DAO.*;
 import nl.hu.dp.domains.Adres;
+import nl.hu.dp.domains.OVChipkaart;
 import nl.hu.dp.domains.Reiziger;
 
 import javax.sound.midi.Soundbank;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -18,14 +18,73 @@ public class Main {
     public static void main(String[] args) throws SQLException {
         ReizigersDAOPostgres rdao = new ReizigersDAOPostgres(getConnection());
         AdresDAOPostgres adoa = new AdresDAOPostgres(getConnection());
+        OVChipkaartDAOpostgres odao = new OVChipkaartDAOpostgres(getConnection());
         rdao.setAdao(adoa);
         adoa.setRdao(rdao);
+        odao.setRdao(rdao);
+        rdao.setOdao(odao);
+
 
 //        testReizigerDAO(rdao);
-        testAdresDAO(adoa, rdao);
+//        testAdresDAO(adoa, rdao);
+        testOVChipkaartDAO(odao, rdao, adoa);
 //        testConnection();
         System.out.println("\n----\nendTest\n----\n");
     }
+
+    private static void testOVChipkaartDAO(OVChipkaartDAOpostgres odao, ReizigersDAOPostgres rdao, AdresDAOPostgres adao) throws SQLException {
+        System.out.println("\n---------- testOVChipkaartDAO -------------");
+
+        // Haal alle OVChipkaarten op uit de database
+        List<OVChipkaart> ovChipkaarten = odao.findAll();
+        System.out.println("[Test] ReizigerDAO.findAll() geeft de volgende reizigers:");
+        for (OVChipkaart ov : ovChipkaarten) {
+            System.out.println(ov);
+        }
+        System.out.println();
+
+        // Haal alle reizigers met adres en ovchipkaart op uit de database
+        List<Reiziger> reizigers = rdao.findAll();
+        System.out.println("[Test] ReizigerDAO.findAll() geeft de volgende reizigers:");
+        for (Reiziger r : reizigers) {
+            System.out.println(r);
+        }
+        System.out.println();
+
+        // Maak een nieuwe reiziger en adres aan aan en persisteer deze in de database
+        String geldig_tot = "2026-03-19";
+        String gbdatum = "1987-06-16";
+        Reiziger r3 = new Reiziger(7, "E", "", "Kolk", java.sql.Date.valueOf(gbdatum));
+        OVChipkaart oc2 = new OVChipkaart(58469, java.sql.Date.valueOf(geldig_tot), 2, 50.00 );
+        Adres a3 = new Adres(7, "3522ST", "128", "Waalstraat", "Utrecht");
+        ArrayList<OVChipkaart> ovChipkaartenr3 = new ArrayList<OVChipkaart>();
+
+        oc2.setReiziger(r3);
+        a3.setReiziger(r3);
+        ovChipkaartenr3.add(oc2);
+        r3.setoVChipkaarten(ovChipkaartenr3);
+
+        rdao.save(r3);
+
+        System.out.println("[Test] ReizigerDAO.findAll() geeft de volgende reizigers:");
+        List<Reiziger> reiziger = rdao.findAll();
+        for (Reiziger r : reiziger) {
+            System.out.println(r);
+        }
+        System.out.println();
+
+        //Test delete
+        System.out.println("\n[Testing delete]: Haal nieuwe reiziger uit database");
+        adao.delete(a3);
+        odao.delete(oc2);
+        rdao.delete(r3);
+        List<Reiziger> alleReizigers = rdao.findAll();
+        for(Reiziger r : alleReizigers){
+            System.out.println(r.toString());
+        }
+    }
+
+
 
     private static void testAdresDAO(AdresDAOPostgres adao, ReizigersDAOPostgres rdao) throws SQLException {
 

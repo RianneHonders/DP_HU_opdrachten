@@ -1,6 +1,7 @@
 package nl.hu.dp.DAO;
 
 import nl.hu.dp.domains.Adres;
+import nl.hu.dp.domains.OVChipkaart;
 import nl.hu.dp.domains.Reiziger;
 
 import java.sql.Connection;
@@ -14,9 +15,18 @@ import java.util.List;
 public class ReizigersDAOPostgres implements ReizigersDAO {
     private Connection connection = null;
     private AdresDAO adao;
+    private OVChipkaartDAO odao;
 
     public ReizigersDAOPostgres(Connection inConnection) throws SQLException {
         this.connection = inConnection;
+    }
+
+    public OVChipkaartDAO getOdao() {
+        return odao;
+    }
+
+    public void setOdao(OVChipkaartDAO odao) {
+        this.odao = odao;
     }
 
     public AdresDAO getAdao() {
@@ -29,26 +39,35 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
 
     public boolean save(Reiziger inReiziger) throws SQLException {
         try {
-            PreparedStatement statement = this.connection.prepareStatement("INSERT INTO reiziger (reiziger_id, voorletters, tussenvoegsel, achternaam, geboortedatum) VALUES (?, ?, ?, ?, ?)");
+            PreparedStatement statement = this.connection.prepareStatement(
+                    "INSERT INTO reiziger (reiziger_id, voorletters, tussenvoegsel, achternaam, geboortedatum) VALUES (?,?,?,?,?)"
+            );
             statement.setInt(1, inReiziger.getId());
             statement.setString(2, inReiziger.getVoorletters());
             statement.setString(3, inReiziger.getTussenvoegsel());
             statement.setString(4, inReiziger.getAchternaam());
             statement.setDate(5, inReiziger.getGeboortedatum());
 
-
-
             statement.executeUpdate();
 
-
+            if (adao != null && inReiziger.getAdres() != null) {
                 adao.save(inReiziger.getAdres());
+            }
+
+            if (odao != null && inReiziger.getOVChipkaarten() != null){
+                for(OVChipkaart ovChipkaart: inReiziger.getOVChipkaarten()){
+                    ovChipkaart.setReiziger(inReiziger);
+                    odao.save(ovChipkaart);
+                }
+            }
 
             statement.close();
 
             return true;
-        } catch (SQLException throwables) {
-            System.err.println("SQLException: " + throwables.getMessage());
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
+
         return false;
     }
 
@@ -108,27 +127,19 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
 
 
     public Reiziger findById(int id) throws SQLException {
-        ArrayList<Reiziger> reizigers = new ArrayList<Reiziger>();
         try {
-            PreparedStatement statement = this.connection.prepareStatement("SELECT * FROM reiziger;");
+            PreparedStatement statement = this.connection.prepareStatement("SELECT * FROM reiziger WHERE reiziger_id = ?");
+            statement.setInt(1, id);
             ResultSet theSet = statement.executeQuery();
 
             while (theSet.next()) {
-                Reiziger reiziger = new Reiziger();
-                reiziger.setId(theSet.getInt("reiziger_id"));
-                reiziger.setVoorletters(theSet.getString("voorletters"));
-                reiziger.setTussenvoegsel(theSet.getString("tussenvoegsel"));
-                reiziger.setAchternaam(theSet.getString("achternaam"));
-                reiziger.setGeboortedatum(theSet.getDate("geboortedatum"));
-
-
-                return reiziger;
+                return parseStatement(theSet);
             }
+
             theSet.close();
             statement.close();
-
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
+        } catch (SQLException sqlex) {
+            System.err.println("SQLException: " + sqlex.getMessage());
         }
         return null;
     }
@@ -145,34 +156,41 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
 
     public List<Reiziger> findAll() throws SQLException {
         ArrayList<Reiziger> reizigers = new ArrayList<Reiziger>();
-
         try {
-            PreparedStatement statement = this.connection.prepareStatement("SELECT * FROM reiziger");
+            PreparedStatement statement = this.connection.prepareStatement("SELECT * FROM reiziger;");
             ResultSet theSet = statement.executeQuery();
 
             while (theSet.next()) {
-                Reiziger reiziger = new Reiziger();
-                reiziger.setId(theSet.getInt("reiziger_id"));
-                reiziger.setVoorletters(theSet.getString("voorletters"));
-                reiziger.setTussenvoegsel(theSet.getString("tussenvoegsel"));
-                reiziger.setAchternaam(theSet.getString("achternaam"));
-                reiziger.setGeboortedatum(theSet.getDate("geboortedatum"));
+                Reiziger r = new Reiziger();
+                r.setId(theSet.getInt("reiziger_id"));
+                r.setVoorletters(theSet.getString("voorletters"));
+                r.setTussenvoegsel(theSet.getString("tussenvoegsel"));
+                r.setAchternaam(theSet.getString("achternaam"));
+                r.setGeboortedatum(theSet.getDate("geboortedatum"));
 
-
-                if (adao.findByReiziger(reiziger) != null) {
-                    reiziger.setAdres(adao.findByReiziger(reiziger));
-                    reiziger.getAdres().setReiziger(reiziger);
+//              Geef het reiziger object mee om het bijbehorende adres op te vragen
+                if (adao != null && adao.findByReiziger(r) != null) {
+                    r.setAdres(adao.findByReiziger(r));
+                    r.getAdres().setReiziger(r);
                 }
 
-                reizigers.add(reiziger);
-            }
+//              Ook hier geven we reiziger mee aan oVChipkaart
+                if (odao != null && odao.findByReiziger(r) != null) {
+                    r.setoVChipkaarten(odao.findByReiziger(r));
+                    for(OVChipkaart ovChipkaart: odao.findByReiziger(r)){
+                        ovChipkaart.setReiziger(r);
+                    }
+                }
 
+                reizigers.add(r);
+            }
             theSet.close();
             statement.close();
 
-        } catch (SQLException sqlex) {
-            System.err.println("SQLException: " + sqlex.getMessage());
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
+
         return reizigers;
     }
 }
