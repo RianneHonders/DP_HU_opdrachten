@@ -1,44 +1,58 @@
 package nl.hu.dp.DAO;
 
-import nl.hu.dp.domains.Adres;
 import nl.hu.dp.domains.OVChipkaart;
+import nl.hu.dp.domains.Product;
 import nl.hu.dp.domains.Reiziger;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class OVChipkaartDAOpostgres implements OVChipkaartDAO {
     private Connection connection = null;
     private ReizigersDAO rdao;
+    private ProductDAO pdao;
 
     public OVChipkaartDAOpostgres(Connection inConnection) throws SQLException {
         this.connection = inConnection;
-    }
-
-    public ReizigersDAO getRdao() {
-        return rdao;
     }
 
     public void setRdao(ReizigersDAO rdao) {
         this.rdao = rdao;
     }
 
+    public void setPdao(ProductDAO pdao) {
+        this.pdao = pdao;
+    }
+
     public boolean save(OVChipkaart ovKaart) throws SQLException {
-            OVChipkaart ovChipkaart = null;
+            OVChipkaart ovChipkaart = new OVChipkaart();
+
             try{
-                PreparedStatement preparedStatement =  connection.prepareStatement("INSERT INTO ov_chipkaart (kaart_nummer, saldo, geldig_tot, klasse, reiziger_id) VALUES (?,?,?,?,?);");
+                PreparedStatement preparedStatement =  connection.prepareStatement("INSERT INTO ov_chipkaart (kaart_nummer, saldo, geldig_tot, klasse, reiziger_id) VALUES (?,?,?,?,?)");
                 preparedStatement.setInt(1, ovKaart.getKaart_nummer());
                 preparedStatement.setDouble(2, ovKaart.getSaldo());
                 preparedStatement.setDate(3, ovKaart.getGeldig_tot());
                 preparedStatement.setInt(4, ovKaart.getKlasse());
                 preparedStatement.setInt(5, ovKaart.getReiziger().getId());
-                preparedStatement.executeQuery();
+
+                preparedStatement.executeUpdate();
+
+                for (Product product : ovKaart.getProducten()) {
+                    PreparedStatement statement = connection.prepareStatement("INSERT INTO ov_chipkaart_product (kaart_nummer, product_nummer, status, last_update) VALUES (?, ?, ?, ?)");
+                    statement.setInt(1, ovKaart.getKaart_nummer());
+                    statement.setInt(2, product.getProduct_nummer());
+                    statement.setString(3, "actief");
+                    statement.setDate(4, Date.valueOf(LocalDate.now()));
+
+                    statement.executeUpdate();
+                    statement.close();
+                }
+
                 preparedStatement.close();
                 return true;
+
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
@@ -47,19 +61,36 @@ public class OVChipkaartDAOpostgres implements OVChipkaartDAO {
 
 
     public boolean update(OVChipkaart ovKaart) throws SQLException {
+        OVChipkaart ovChipkaart = null;
         try{
             PreparedStatement statement = this.connection.prepareStatement(
-                    "UPDATE ov_chipkaart SET kaart_nummer = ?, geldig_tot = ?, klasse =? , saldo = ? WHERE kaartnummer = ?;"
-            );
+                    "UPDATE ov_chipkaart SET kaart_nummer = ?, geldig_tot = ?, klasse =? , saldo = ? WHERE kaartnummer = ?");
             statement.setInt(1, ovKaart.getKaart_nummer());
             statement.setDate(2, ovKaart.getGeldig_tot());
             statement.setInt(3, ovKaart.getKlasse());
             statement.setDouble(4, ovKaart.getSaldo());
             statement.setInt(5, ovKaart.getKaart_nummer());
 
-
             statement.executeUpdate();
+
+            PreparedStatement statement3 = this.connection.prepareStatement(
+                    "DELETE FROM ov_chipkaart_product WHERE kaart_nummer = ?");
+            statement3.setInt(1, ovKaart.getKaart_nummer());
+            statement3.executeQuery();
+
+            for (Product product : ovChipkaart.getProducten()) {
+                PreparedStatement statement2 = connection.prepareStatement(
+                        "INSERT INTO ov_chipkaart_product (kaart_nummer, product_nummer, status, last_update) VALUES (?,?,?,?)");
+                statement2.setInt(1, ovChipkaart.getKaart_nummer());
+                statement2.setInt(2, product.getProduct_nummer());
+                statement2.setString(3, "actief");
+                statement2.setDate(4, Date.valueOf(LocalDate.now()));
+
+                statement2.executeUpdate();
+            }
+
             statement.close();
+            statement3.close();
 
             return true;
 
@@ -72,12 +103,24 @@ public class OVChipkaartDAOpostgres implements OVChipkaartDAO {
 
     public boolean delete(OVChipkaart ovKaart) throws SQLException {
         OVChipkaart ovChipkaart = null;
-        try{
-            PreparedStatement preparedStatement =  connection.prepareStatement("DELETE FROM ov_chipkaart WHERE kaart_nummer = ?;");
-            preparedStatement.setInt(1, ovKaart.getKaart_nummer());
 
-            preparedStatement.executeQuery();
-            preparedStatement.close();
+        try{
+            PreparedStatement statement1 =  connection.prepareStatement(
+                    "DELETE FROM ov_chipkaart_product WHERE kaart_nummer = ?");
+            statement1.setInt(1, ovKaart.getKaart_nummer());
+
+            PreparedStatement statement2 =  connection.prepareStatement(
+                    "DELETE FROM ov_chipkaart WHERE kaart_nummer = ?");
+            statement2.setInt(1, ovKaart.getKaart_nummer());
+
+
+
+            statement1.executeQuery();
+            statement2.executeQuery();
+
+            statement1.close();
+            statement2.close();
+
             return true;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -100,7 +143,8 @@ public class OVChipkaartDAOpostgres implements OVChipkaartDAO {
     public List<OVChipkaart> findByReiziger(Reiziger reiziger) throws SQLException {
         ArrayList<OVChipkaart> ovChipkaarten = new ArrayList<OVChipkaart>();
         try{
-            PreparedStatement preparedStatement =  connection.prepareStatement("SELECT * FROM ov_chipkaart WHERE reiziger_id = ?;");
+            PreparedStatement preparedStatement =  connection.prepareStatement(
+                    "SELECT * FROM ov_chipkaart WHERE reiziger_id = ?;");
             preparedStatement.setInt(1, reiziger.getId());
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -122,7 +166,8 @@ public class OVChipkaartDAOpostgres implements OVChipkaartDAO {
     public OVChipkaart findById(int id) throws SQLException {
         OVChipkaart ovChipkaart = null;
         try{
-            PreparedStatement preparedStatement =  connection.prepareStatement("SELECT * FROM ov_chipkaart WHERE kaart_nummer = ?;");
+            PreparedStatement preparedStatement =  connection.prepareStatement(
+                    "SELECT * FROM ov_chipkaart WHERE kaart_nummer = ?;");
             preparedStatement.setInt(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
 
@@ -142,16 +187,27 @@ public class OVChipkaartDAOpostgres implements OVChipkaartDAO {
 
 
     public List<OVChipkaart> findAll() throws SQLException {
-        ArrayList<OVChipkaart> ovChipkaarten = new ArrayList<OVChipkaart>();
+
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM ov_chipkaart;");
-            ResultSet resultSet = preparedStatement.executeQuery();
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                    "SELECT * FROM ov_chipkaart;");
+            ResultSet theSet = preparedStatement.executeQuery();
 
-            while (resultSet != null && resultSet.next()) {
-                ovChipkaarten.add(parseStatement(resultSet));
+            ArrayList<OVChipkaart> ovChipkaarten = new ArrayList<OVChipkaart>();
+
+            while (theSet != null && theSet.next()) {
+                OVChipkaart ov = new OVChipkaart();
+                ov.setKaart_nummer(theSet.getInt("kaart_nummer"));
+                ov.setGeldig_tot(theSet.getDate("geldig_tot"));
+                ov.setKlasse(theSet.getInt("klasse"));
+                ov.setSaldo(theSet.getFloat("saldo"));
+
+                List<Product> pr = pdao.findByOVChipkaart(ov);
+                ov.setProducten(pr);
+                ovChipkaarten.add(ov);
+
             }
-
-            resultSet.close();
+            theSet.close();
             return ovChipkaarten;
         } catch (SQLException e) {
             System.out.println(e.getMessage());

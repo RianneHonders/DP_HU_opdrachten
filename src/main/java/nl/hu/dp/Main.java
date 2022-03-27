@@ -2,6 +2,7 @@ package nl.hu.dp;
 import nl.hu.dp.DAO.*;
 import nl.hu.dp.domains.Adres;
 import nl.hu.dp.domains.OVChipkaart;
+import nl.hu.dp.domains.Product;
 import nl.hu.dp.domains.Reiziger;
 
 import javax.sound.midi.Soundbank;
@@ -19,18 +20,64 @@ public class Main {
         ReizigersDAOPostgres rdao = new ReizigersDAOPostgres(getConnection());
         AdresDAOPostgres adoa = new AdresDAOPostgres(getConnection());
         OVChipkaartDAOpostgres odao = new OVChipkaartDAOpostgres(getConnection());
+        ProductDAOPostgres pdao = new ProductDAOPostgres(getConnection());
         rdao.setAdao(adoa);
         adoa.setRdao(rdao);
         odao.setRdao(rdao);
         rdao.setOdao(odao);
+        odao.setPdao(pdao);
+        pdao.setOdao(odao);
 
 
 //        testReizigerDAO(rdao);
 //        testAdresDAO(adoa, rdao);
-        testOVChipkaartDAO(odao, rdao, adoa);
+        testProductDAO(pdao, odao, rdao);
+//        testOVChipkaartDAO(odao, rdao, adoa);
 //        testConnection();
         System.out.println("\n----\nendTest\n----\n");
     }
+
+    private static void testProductDAO(ProductDAOPostgres pdao, OVChipkaartDAOpostgres odao, ReizigersDAOPostgres rdao) throws SQLException {
+
+        // Maak een nieuwe ovchipkaart en product aan aan en persisteer deze in de database
+        String geldig_tot = "2026-03-19";
+        String geboorteD = "1985-10-10";
+        Reiziger r1 = new Reiziger(6, "A","", "Benschop", java.sql.Date.valueOf(geboorteD));
+        OVChipkaart oc2 = new OVChipkaart(12589, java.sql.Date.valueOf(geldig_tot), 2, 50.00 );
+        Product p1 = new Product(7, "test", "test", 20.50);
+        ArrayList<OVChipkaart> ovChipkaarten = new ArrayList<OVChipkaart>();
+
+        r1.setoVChipkaarten(ovChipkaarten);
+        oc2.setReiziger(r1);
+        ovChipkaarten.add(oc2);
+        oc2.addProduct(p1);
+        p1.addOVChipkaart(oc2);
+
+        pdao.save(p1);
+        rdao.save(r1);
+
+        System.out.println("[Test] ProductDAO.findAll() geeft de volgende producten:");
+
+        List<Product> producten2 = pdao.findAll();
+        for (Product product : producten2) {
+            System.out.println(product);
+        }
+        System.out.println("Aantal producten in de database na save " + producten2.size());
+
+
+        System.out.println("\n[Testing delete]: Haal nieuwe data uit database");
+        pdao.delete(p1);
+        odao.delete(oc2);
+        rdao.delete(r1);
+
+        List<Product> producten3 = pdao.findAll();
+        for (Product product : producten3) {
+            System.out.println(product);
+        }
+        System.out.println("Aantal producten in de database na delete " + producten3.size());
+
+    }
+
 
     private static void testOVChipkaartDAO(OVChipkaartDAOpostgres odao, ReizigersDAOPostgres rdao, AdresDAOPostgres adao) throws SQLException {
         System.out.println("\n---------- testOVChipkaartDAO -------------");
@@ -83,6 +130,8 @@ public class Main {
             System.out.println(r.toString());
         }
     }
+
+
 
 
 

@@ -29,10 +29,6 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
         this.odao = odao;
     }
 
-    public AdresDAO getAdao() {
-        return adao;
-    }
-
     public void setAdao(AdresDAO adao) {
         this.adao = adao;
     }
@@ -168,22 +164,20 @@ public class ReizigersDAOPostgres implements ReizigersDAO {
                 r.setAchternaam(theSet.getString("achternaam"));
                 r.setGeboortedatum(theSet.getDate("geboortedatum"));
 
-//              Geef het reiziger object mee om het bijbehorende adres op te vragen
                 if (adao != null && adao.findByReiziger(r) != null) {
                     r.setAdres(adao.findByReiziger(r));
                     r.getAdres().setReiziger(r);
                 }
 
-//              Ook hier geven we reiziger mee aan oVChipkaart
                 if (odao != null && odao.findByReiziger(r) != null) {
                     r.setoVChipkaarten(odao.findByReiziger(r));
                     for(OVChipkaart ovChipkaart: odao.findByReiziger(r)){
                         ovChipkaart.setReiziger(r);
                     }
                 }
-
                 reizigers.add(r);
             }
+
             theSet.close();
             statement.close();
 
